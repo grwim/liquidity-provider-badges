@@ -12,38 +12,21 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "./LpToken.sol";
 // LP Badge 
 
-// REVIEW test cases
-// - non-transferable
-// - no more than one badge at a time
-
-// REVIEW -- breakout functionality so that there's a HonorBadgeVendor
-
-// ASSUMED: user will only stake one amount at a time 
-// EDGE CASE -- more than one stake, at different times 
-// -- solution: keep track of rate for each period
-  // could have lookup between adddress-->array index, and then have two, 2d arrays, where one corresponds to balance, and the other timestamp
-
-// EDGE CASE -- what if user earned a badge and doesnt claim it right away? still earning next badge in meantime? 
-
-
-// 10000 LP tokens in circulation
-// 100 is 1% of total supply 
-// should take 100 days with 1 token staked to get a lvl 1 badge
-// should take 1 day with 100 tokens staked to get a lvl 1 badge 
-//// this way, a badge always corresponds to the same amount of staked LP for the number of days 
+// REVIEW -- ? checks that transfers of LP tokens have ben sent sucsefully? 
 
 // uint constant MINUTE_IN_SECONDS = 60;
 // uint constant HOUR_IN_SECONDS = 60 * MINUTE_IN_SECONDS;
 // uint constant DAY_IN_SECONDS = 24 * HOUR_IN_SECONDS;
 uint constant DAY_IN_SECONDS = 60; //How many seconds in a day. 60 for testing, 86400 for Production
 
+uint256 constant NO_BADGE = 0;
 uint256 constant LEVEL_1_BADGE = 1;
 uint256 constant LEVEL_2_BADGE = 2;
 uint256 constant LEVEL_3_BADGE = 3;
 
 uint constant LVL_1_BADGE_THRESHOLD = 100;
-uint constant LVL_2_BADGE_THRESHOLD = 200;
-uint constant LVL_3_BADGE_THRESHOLD = 300;
+uint constant LVL_2_BADGE_THRESHOLD = 500;
+uint constant LVL_3_BADGE_THRESHOLD = 1000;
 
 contract HonorBadges is ERC1155 {
 
@@ -57,12 +40,13 @@ contract HonorBadges is ERC1155 {
 
   // Contract's Events
   event Stake(address indexed sender, uint256 amount);
-  event Claim(address indexed sender, uint badge_type);
   event Withdraw(address indexed sender, uint256 amount);
+  event Claim(address indexed sender, uint badge_type, bool badge_earned);
+
 
   // Contract's Modifiers
-  modifier nonTransferable(address from, address to) {
-    require((from == address(this) || (to == address(this))), "Badges cannot be transfered to others - only received or returned");
+  modifier disableTransfers () {
+    revert("Transfers have been disabled for HonorBadges");
     _;
   }
 
@@ -82,7 +66,7 @@ contract HonorBadges is ERC1155 {
       uint256 id,
       uint256 amount,
       bytes memory data
-  ) public override(ERC1155) nonTransferable(from, to) {
+  ) public override(ERC1155) disableTransfers() {
       require(
           from == _msgSender() || isApprovedForAll(from, _msgSender()),
           "ERC1155: caller is not owner nor approved"
@@ -100,7 +84,7 @@ contract HonorBadges is ERC1155 {
       uint256[] memory ids,
       uint256[] memory amounts,
       bytes memory data
-  ) public override(ERC1155) nonTransferable(from, to) {
+  ) public override(ERC1155) disableTransfers() {
       require(
           from == _msgSender() || isApprovedForAll(from, _msgSender()),
           "ERC1155: transfer caller is not owner nor approved"
@@ -122,29 +106,36 @@ contract HonorBadges is ERC1155 {
       curr_balance = lp_balances[msg.sender][lp_balances[msg.sender].length - 1]; // get most recent balance value for the address
     }
 
+    // update state for balances before making external call 
+    lp_balances[msg.sender].push(curr_balance + _amount); // update balance & balance timestamp for the msg.sender
+    lp_balance_timestamps[msg.sender].push(block.timestamp);
+
     // transfer lp tokens
     lpToken.transferFrom(msg.sender, address(this), _amount);
-
-    // update balance & balance timestamp for the msg.sender
-    lp_balances[msg.sender].push(curr_balance + _amount);
-    lp_balance_timestamps[msg.sender].push(block.timestamp);
 
     emit Stake(msg.sender, _amount);
   }
 
+// NOTICE to prevent re-entrance we should always modify the state of the contract before any external contract call 
   function withdraw(uint256 _amount) public {
     require(lp_balances[msg.sender].length > 0, "No lp tokens have been staked by msg.sender"); // check that lp tokens have already been staked by the msg.sender
 
-    uint256 curr_balance = lp_balances[msg.sender][lp_balances[msg.sender].length - 1]; // get most recent balance value for the address
+    uint256 userBalance = getStakeBalance(msg.sender); // get most recent balance value for the address
 
-    require(curr_balance >= _amount, "Not enough LP tokens staked to withdraw that amount");    // verify msg.sender has enough lp tokens in the smart contract
+    require(userBalance >= _amount, "Not enough LP tokens staked to withdraw that amount");    // verify msg.sender has enough lp tokens in the smart contract
 
-    lpToken.transferFrom(address(this), msg.sender, _amount);  // transfer requested amount to the msg.sender
-
-    lp_balances[msg.sender].push(curr_balance - _amount); // add new balance value, after withdraw
+    // update state for balances before making external call 
+    lp_balances[msg.sender].push(userBalance - _amount); // add new balance value, after withdraw 
     lp_balance_timestamps[msg.sender].push(block.timestamp); // add new timestamp for new balance 
 
+    lpToken.transfer(msg.sender, _amount);  // transfer requested amount to the msg.sender
+
     emit Withdraw(msg.sender, _amount);
+  }
+
+  // returns current state balance
+  function getStakeBalance(address _account) public view returns(uint256 _amount) {
+        return lp_balances[_account][lp_balances[_account].length - 1]; // return the most recent balance value for the address
   }
 
   function badgeProgress(address account) public view returns(uint256 badge_progress) {
@@ -187,18 +178,21 @@ contract HonorBadges is ERC1155 {
         _burn(msg.sender, LEVEL_1_BADGE, 1); // burn 1 lvl 1 badge
       }
       _mint(msg.sender, LEVEL_3_BADGE, 1, ""); // mint one new lvl 3 badge to staker
-
+      emit Claim(msg.sender, LEVEL_3_BADGE, true);
     } else if ( (badge_progress >= LVL_2_BADGE_THRESHOLD) && (this.balanceOf(msg.sender, LEVEL_2_BADGE ) == 0) ) // lvl two badge threshold has been met, and doesnt have a lvl 2 badge
     {
       if ( this.balanceOf( msg.sender, LEVEL_1_BADGE ) == 1 ) { // check for previous lvl 1 badge 
         _burn(msg.sender, LEVEL_1_BADGE, 1); // burn 1 lvl 1 badge
       }
       _mint(msg.sender, LEVEL_2_BADGE, 1, ""); // mint one new lvl 2 badge to staker
+      emit Claim(msg.sender, LEVEL_2_BADGE, true);
     } else if ( (badge_progress >= LVL_1_BADGE_THRESHOLD) && (this.balanceOf(msg.sender, LEVEL_1_BADGE ) == 0) ) // lvl 1 badge threshold has been met, and doesnt have a lvl 1 badge
     {      
       _mint(msg.sender, LEVEL_1_BADGE, 1, ""); // mint one new lvl 1 badge to staker
+      emit Claim(msg.sender, LEVEL_1_BADGE, true);
     } else {
       console.log("Not eligable for a new badge.");
+      emit Claim(msg.sender, NO_BADGE, false);
     }
   }
 
