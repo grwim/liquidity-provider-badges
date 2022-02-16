@@ -58,7 +58,7 @@ Token meta data for the three badges specified and hosted, as per eip-1155 https
 
 
 ## Badge Earn Rate 
-![\Large x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}](https://latex.codecogs.com/svg.image?\bg_black&space;\sum_{1}^{n}(numDaysTimePeriod_{i}&space;*&space;numLpTokensStakedPeriod_{i})) 
+![\Large x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}](https://latex.codecogs.com/png.image?\dpi{100}&space;\bg_white&space;\sum_{1}^{n}(numDaysTimePeriod_{i}&space;*&space;numLpTokensStakedPeriod_{i})) 
 
 Using this linear earn rate means that staking 100 tokens for 1 days and 1 token for 100 days earn the same amount of progress towards a badge.  
 
