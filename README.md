@@ -1,9 +1,9 @@
-> ERC1155 Badges (non-transferable) for LP Token Providers 
+# ERC1155 Badges (non-transferable) for LP Token Providers 
 
->> General Idea
+## General Idea
 Liquidity providers (of an arbitrary automated market making protocol) should be rewarded for long-term liquidity provision. Therefore they can stake their LP tokens in a smart contract that, over time, rewards them with honorable badges.
 
->> Functional Requirements
+## Functional Requirements
 - liquidity providers can stake their LP tokens
 - after a certain time period has passed they can claim a non-transferable badge once
 - the badge follows the multi-token standard (ERC1155)
@@ -12,10 +12,8 @@ Liquidity providers (of an arbitrary automated market making protocol) should be
 - stakers first can claim a “level-1 badge” , if they continue to stake, they can at some point claim a “level-2 badge” and so forth
 - every time a staker claims their badge from the next level they lose all badges from lower levels
 
-
-Prerequisites: [Node (v16 LTS)](https://nodejs.org/en/download/) plus [Yarn](https://classic.yarnpkg.com/en/docs/install/) and [Git](https://git-scm.com/downloads)
-
 ## Local Deployment
+Prerequisites: [Node (v16 LTS)](https://nodejs.org/en/download/) plus [Yarn](https://classic.yarnpkg.com/en/docs/install/) and [Git](https://git-scm.com/downloads)
 
 > install and start the Hardhat chain:
 
@@ -59,7 +57,7 @@ Badge 3: http://acro.ai/liquidity-provider-badges/api/token/00000000000000000000
 
 
 ## Badge Earn Rate 
-<img src="https://latex.codecogs.com/svg.image?\sum_{1}^{n}(numDaysTimePeriod_{i}&space;*&space;numLpTokensStakedPeriod_{i})" title="\sum_{1}^{n}(numDaysTimePeriod_{i} * numLpTokensStakedPeriod_{i})" />
+![\Large x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}](https://latex.codecogs.com/svg.image?\sum_{1}^{n}(numDaysTimePeriod_{i}&space;*&space;numLpTokensStakedPeriod_{i})) 
 
 Using this linear earn rate means that staking 100 tokens for 1 days, or 1 token for 100 days earn the same amount of progress towards a badge.  
 
