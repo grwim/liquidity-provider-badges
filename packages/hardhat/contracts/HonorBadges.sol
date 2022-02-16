@@ -31,7 +31,6 @@ contract HonorBadges is ERC1155 {
 
   mapping(address => uint256[]) public lpBalances; // Balances of lp tokens staked for an address
   mapping(address => uint[]) public lpBalanceTimestamps; // Timestamps of changes in lp balance for an address
-  // mapping(address => uint) public lp_balance_count; // Count of number of changes to lp balance 
 
   // Contract's Events
   event Stake(address indexed sender, uint256 amount);
@@ -39,7 +38,7 @@ contract HonorBadges is ERC1155 {
   event Claim(address indexed sender, uint badge_type, bool badge_earned);
 
   // Contract's Modifiers
-  modifier disableTransfers () {
+  modifier disableTransfers () {  // used to disable the transfer methods of the parent ERC1155
     revert("Transfers have been disabled for HonorBadges");
     _;
   }
@@ -127,7 +126,7 @@ contract HonorBadges is ERC1155 {
 
     uint256 userBalance = getStakeBalance(msg.sender); // get most recent balance value for the address
 
-    require(userBalance >= amount, "Not enough LP tokens staked to withdraw that amount");    // verify msg.sender has enough lp tokens in the smart contract
+    require(userBalance >= amount, "Not enough LP tokens staked to withdraw that amount");    // verify msg.sender has enough lp tokens staked to withdraw the requested amount
 
     // update state for balances before making external call 
     lpBalances[msg.sender].push(userBalance - amount); // add new balance value, after withdraw 
@@ -138,8 +137,7 @@ contract HonorBadges is ERC1155 {
     emit Withdraw(msg.sender, amount);
   }
 
-  // REVIEW -- if two stakes are made on the same day, does the math add up? 
-  /// @notice Returns the current badge progress of the specified address
+  /// @notice Calculates & returns the current badge progress of the specified address
   /// @param account - address of the account, for which the badge progress is wished to be known
   /// @dev used by claim()
   /// @dev REVIEW further gas optimizations likely possible here
@@ -169,7 +167,7 @@ contract HonorBadges is ERC1155 {
   /// @notice allows a user to claim a badge, if eligable. every time a stake claims their badge from the next level they lose all badges from lower levels. a badge can only be claimed once.
   function claim() public {
 
-    // REVIEW require( lp_balance[msg.sender] > 0, "No stake has been made");
+    require( lpBalances[msg.sender].length > 0, "No stake has been made"); // require that a stake has already been made, before claim can be called
 
     uint256 badgeProgress = badgeProgress(msg.sender); 
 

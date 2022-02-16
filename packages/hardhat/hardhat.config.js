@@ -31,11 +31,10 @@ const defaultNetwork = "localhost";
 
 const mainnetGwei = 21;
 
-const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
-const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
-
-// console.log("result", result.parsed);
-console.log("DEPLOYER_PRIVATE_KEY", DEPLOYER_PRIVATE_KEY);
+const INFURA_PROJECT_ID="618f8b5fce1d4a5ea8e33bda6960ee7b";
+const DEPLOYER_PRIVATE_KEY="716d7a02c8d0ffb2648a17c08d32c7dbe42fbfefe16c92a2a1d4b369af0040b7";
+// const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
+// const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
 function mnemonic() {
   try {
