@@ -141,7 +141,7 @@ contract HonorBadges is ERC1155 {
   /// @param account - address of the account, for which the badge progress is wished to be known
   /// @dev used by claim()
   /// @dev REVIEW further gas optimizations likely possible here
-  function badgeProgress(address account) public view returns(uint256 badgeProgress) {
+  function getBadgeProgress(address account) public view returns(uint256 badgeProgress) {
     
     uint256 badgeProgress = 0;
     uint numStakeBalances = lpBalances[msg.sender].length;
@@ -169,7 +169,7 @@ contract HonorBadges is ERC1155 {
 
     require( lpBalances[msg.sender].length > 0, "No stake has been made"); // require that a stake has already been made, before claim can be called
 
-    uint256 badgeProgress = badgeProgress(msg.sender); 
+    uint256 badgeProgress = getBadgeProgress(msg.sender); 
 
     // check badge progress against badge requirements 
     if ((badgeProgress >= LVL_3_BADGE_THRESHOLD) && (this.balanceOf(msg.sender, LEVEL_3_BADGE ) == 0)) // lvl 3 badge threshold has been met, and doesnt have a lvl 3 badge
